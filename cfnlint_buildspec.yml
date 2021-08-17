@@ -14,7 +14,7 @@ phases:
       # - cfn-lint -i W2001 -t Genetics_Stack.yml
       # - cfn-lint -i W2001 -t Web_App_Stack.yml
       # - cfn-lint -i W2001 W3001 -t Fitness_Processing_Stack.yml
-      - pylint --version
+      # - pylint --version
       # - pylint-fail-under --fail_under 9.4 scripts/*.py
       #  - cfn-lint -i W2001 -t Monitoring.json
   build:
