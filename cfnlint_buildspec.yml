@@ -19,6 +19,7 @@ phases:
       #  - cfn-lint -i W2001 -t Monitoring.json
   build:
     commands:
+      - echo Build started on `date`
       - mkdir base
       - cd base
       - mkdir builds
@@ -37,8 +38,10 @@ phases:
       # - cp testjob-cas (1).py /scripts
       # - mv scripts.zip base/
       - ls base
-      - ls builds/
-
+      - ls base/builds/
+post_build:
+  commands:
+    - echo Build completed on `date`
 artifacts:
   files:
     - "**/*"
