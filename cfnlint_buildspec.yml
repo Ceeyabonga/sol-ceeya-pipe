@@ -37,7 +37,7 @@ phases:
       # - cp testjob-cas (1).py /scripts
       # - mv scripts.zip base/
       - ls base
-      - ls /builds
+      - ls builds/
 
 artifacts:
   files:
