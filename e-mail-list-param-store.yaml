@@ -13,6 +13,7 @@ Parameters:
   BUSOU:
     Type: String
     Description: Contrlo Tower OU
+    Default: DEV-OU
 Resources:
   ParameterStore1:
     Type: AWS::SSM::Parameter
