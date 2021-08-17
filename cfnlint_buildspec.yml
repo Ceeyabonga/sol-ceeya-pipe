@@ -1,0 +1,49 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - pip install cfn-lint
+      - pip install --upgrade setuptools
+      - pip install pylint
+      - pip install pylint-fail-under
+  pre_build:
+    commands:
+      - cfn-lint -v
+      # - cfn-lint -i W2001 -t 3x4Buckets_stack_Ohio.yml
+      # - cfn-lint -i W2001 -t Genetics_Stack.yml
+      # - cfn-lint -i W2001 -t Web_App_Stack.yml
+      # - cfn-lint -i W2001 W3001 -t Fitness_Processing_Stack.yml
+      - pylint --version
+      # - pylint-fail-under --fail_under 9.4 scripts/*.py
+      #  - cfn-lint -i W2001 -t Monitoring.json
+  build:
+    commands:
+      - mkdir base
+      - cd base
+      - mkdir builds
+      - cd ..
+      - cp one-gateway-vpc-script.yaml base/
+      - cp e-mail-list-param-store.yaml base/
+      # - cp codepipeline.yml base/
+      # - cp create_codecommit.yml base/
+      # - cp -r builds/* base/builds/
+      # - cp cp_to_s3_buildspec.yml base/builds/
+      - cp cfnlint_buildspec.yml base/builds/
+      # - zip -r scripts.zip scripts/*
+      # - mkdir scripts
+      # - zip -r testjob-cas (1).zip testjob-cas (1).py && cd - && mv testjob-cas (1).zip scripts/
+
+      # - cp testjob-cas (1).py /scripts
+      # - mv scripts.zip base/
+      - ls base
+      - ls builds
+
+artifacts:
+  files:
+    - "**/*"
+  secondary-artifacts:
+    base:
+      base-directory: base
+      files:
+        - "**/*"
