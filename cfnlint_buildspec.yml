@@ -5,8 +5,8 @@ phases:
     commands:
       - pip install cfn-lint
       - pip install --upgrade setuptools
-      - pip install pylint
-      - pip install pylint-fail-under
+      # - pip install pylint
+      # - pip install pylint-fail-under
   pre_build:
     commands:
       - cfn-lint -v
@@ -37,7 +37,7 @@ phases:
       # - cp testjob-cas (1).py /scripts
       # - mv scripts.zip base/
       - ls base
-      - ls builds
+      - ls /builds
 
 artifacts:
   files:
