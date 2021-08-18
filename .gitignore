@@ -1,6 +1,11 @@
 # Pipeline script
 codepipeline.yml
 codepipeline_new.yml
+<<<<<<< HEAD
 codepipeline_qa.yml
 codepipeline_prod.yml
+=======
+codepipeline_prod.yml
+codepipeline_qa.yml
+>>>>>>> dev
 codepipeline_dev.yml

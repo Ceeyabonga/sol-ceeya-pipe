@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create an S3 inventory Bucket
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "Tagging:"
+        Parameters:
+          - Name
+          - TECSYSTEM
+          - TECENVIRONMENT
+          - BUSOU
+          - TECAPPLICATIONROLE
+          - BUSOWNER
+          - BUSPROJECT
+          - BUSPRODUCT
+          - AUTOLIFETIME
+    ParameterLabels:
+      TECSYSTEM:
+        default: Enter system tag.
+      TECENVIRONMENT:
+        default: Select operating environment.
+      BUSOU:
+        default: OU that this service belongs to.
+      Name:
+        default: System Name.
+      TECAPPLICATIONROLE:
+        default: Function of the resource.
+      BUSOWNER:
+        default: email address in lower case.
+      BUSPROJECT:
+        default: Project that the resource belongs to.
+      BUSPRODUCT:
+        default: Product related to this resource.
+      AUTOLIFETIME:
+        default: Is the resource temporary or Permanent.
+Parameters:
+  BucketName1:
+    Type: String
+  TECSYSTEM:
+    Type: String
+  TECENVIRONMENT:
+    Type: String
+  Name:
+    Type: String
+  BUSOU:
+    Type: String
+  TECAPPLICATIONROLE:
+    Type: String
+  BUSOWNER:
+    Type: String
+  BUSPROJECT:
+    Type: String
+  BUSPRODUCT:
+    Type: String
+  AUTOLIFETIME:
+    Type: String
+Resources:
+  S3Bucket1:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref BucketName1
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      AccessControl: LogDeliveryWrite
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: TECENVIRONMENT
+          Value: !Ref TECENVIRONMENT
+        - Key: TECAPPLICATIONROLE
+          Value: !Ref TECAPPLICATIONROLE
+        - Key: TECSYSTEM
+          Value: !Ref TECSYSTEM
+        - Key: BUSOU
+          Value: !Ref BUSOU
+        - Key: BUSOWNER
+          Value: !Ref BUSOWNER
+        - Key: BUSPROJECT
+          Value: !Ref BUSPROJECT
+        - Key: BUSPRODUCT
+          Value: !Ref BUSPRODUCT
+        - Key: AUTOLIFETIME
+          Value: !Ref AUTOLIFETIME
+  BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref BucketName1
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: InventoryAndAnalyticsExamplePolicy
+            Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action: "s3:PutObject"
+            Resource: !Sub "arn:aws:s3:::${BucketName1}/*"
+            Condition:
+              ArnLike:
+                "aws:SourceArn": "arn:aws:s3:::ct-ire-*"
+              StringEquals:
+                "aws:SourceAccount": !Ref "AWS::AccountId"
+                "s3:x-amz-acl": bucket-owner-full-control
+Outputs:
+  Bucket:
+    Value: !GetAtt
+      - S3Bucket1
+      - Arn
+    Export:
+      Name: !Sub "${BucketName1}"
