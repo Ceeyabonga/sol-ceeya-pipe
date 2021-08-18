@@ -1,3 +1,6 @@
 # Pipeline script
 codepipeline.yml
 codepipeline_new.yml
+codepipeline_qa.yml
+codepipeline_prod.yml
+codepipeline_dev.yml
