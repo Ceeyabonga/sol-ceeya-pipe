@@ -1,0 +1,13 @@
+{
+  "Parameters": {
+    "BucketName1": "al-xhosa-sol-ceeya-inventory",
+    "TECSYSTEM": "NETWORK",
+    "Name": "S3BUCKET_STACK",
+    "BUSOU": "DEV-OU",
+    "TECAPPLICATIONROLE": "INVENTORY",
+    "BUSOWNER": "siya.mendziwa@liberty.co.za",
+    "BUSPROJECT": "CT_BOOTCAMP_CEEYA",
+    "BUSPRODUCT": "CT_S3_BUCKETS",
+    "AUTOLIFETIME": "PERMANENT"
+  }
+}
