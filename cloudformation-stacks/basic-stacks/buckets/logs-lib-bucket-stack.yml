@@ -51,11 +51,6 @@ Parameters:
     Default: NETWORK
   TECENVIRONMENT:
     Type: String
-    AllowedValues:
-      - CT-DEV
-      - CT-CORE
-      - CT-SHARED
-      - CT-STAGING
     Default: CT-DEV
   Name:
     Type: String
