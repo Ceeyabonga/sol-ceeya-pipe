@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Create an S3 inventory Bucket
+Description: Create a library and the logging Bucket
 Metadata:
   "AWS::CloudFormation::Interface":
     ParameterGroups:
@@ -37,36 +37,85 @@ Metadata:
 Parameters:
   BucketName1:
     Type: String
+    Default: al-xhosa-ire-scriptlib
+  LoggingBucketName:
+    Type: String
+    Default: al-xhosa-ire-s3-logs
+  InventoryBucketArn:
+    Type: String
+    Description: Bucket for storing inventory
+    ConstraintDescription: must be an arn of an existing bucket.
+    Default: "arn:aws:s3:::al-xhosa-sol-ceeya-inventory"
   TECSYSTEM:
     Type: String
+    Default: NETWORK
   TECENVIRONMENT:
     Type: String
+    AllowedValues:
+      - CT-DEV
+      - CT-CORE
+      - CT-SHARED
+      - CT-STAGING
+    ConstraintDescription: must be a valid environment.
+    Default: CT-DEV
   Name:
     Type: String
+    Default: S3BUCKET_STACK
   BUSOU:
     Type: String
+    Default: DEV-OU
   TECAPPLICATIONROLE:
     Type: String
+    Default: OPS_DATA
   BUSOWNER:
     Type: String
+    Default: ceeya@al.co.za
   BUSPROJECT:
     Type: String
+    Default: CT_OPS
   BUSPRODUCT:
     Type: String
+    Default: S3_BUCKETS
   AUTOLIFETIME:
     Type: String
+    Default: PERMANENT
 Resources:
   S3Bucket1:
     Type: "AWS::S3::Bucket"
     Properties:
       BucketName: !Ref BucketName1
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
-      AccessControl: LogDeliveryWrite
-      VersioningConfiguration:
-        Status: Enabled
+      LoggingConfiguration:
+        DestinationBucketName: !Ref LoggingBucket
+      AnalyticsConfigurations:
+        - Id: AnalyticsConfigurationId
+          StorageClassAnalysis:
+            DataExport:
+              Destination:
+                BucketArn: !Ref InventoryBucketArn
+                Format: CSV
+                Prefix: AnalyticsDestinationPrefix
+              OutputSchemaVersion: V_1
+          Prefix: AnalyticsConfigurationPrefix
+          TagFilters:
+            - Key: AnalyticsTagKey
+              Value: AnalyticsTagValue
+      InventoryConfigurations:
+        - Id: InventoryConfigurationId
+          Destination:
+            BucketArn: !Ref InventoryBucketArn
+            Format: CSV
+            Prefix: InventoryDestinationPrefix
+          Enabled: "true"
+          IncludedObjectVersions: Current
+          Prefix: InventoryConfigurationPrefix
+          ScheduleFrequency: Weekly
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -89,25 +138,15 @@ Resources:
           Value: !Ref BUSPRODUCT
         - Key: AUTOLIFETIME
           Value: !Ref AUTOLIFETIME
-  BucketPolicy:
-    Type: "AWS::S3::BucketPolicy"
+  LoggingBucket:
+    Type: "AWS::S3::Bucket"
     Properties:
-      Bucket: !Ref BucketName1
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Sid: InventoryAndAnalyticsExamplePolicy
-            Effect: Allow
-            Principal:
-              Service: s3.amazonaws.com
-            Action: "s3:PutObject"
-            Resource: !Sub "arn:aws:s3:::${BucketName1}/*"
-            Condition:
-              ArnLike:
-                "aws:SourceArn": "arn:aws:s3:::al-xhosa-ire-*"
-              StringEquals:
-                "aws:SourceAccount": !Ref "AWS::AccountId"
-                "s3:x-amz-acl": bucket-owner-full-control
+      BucketName: !Ref LoggingBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: "true"
+        BlockPublicPolicy: "true"
+        RestrictPublicBuckets: "true"
+      AccessControl: LogDeliveryWrite
 Outputs:
   Bucket:
     Value: !GetAtt
@@ -115,3 +154,9 @@ Outputs:
       - Arn
     Export:
       Name: !Sub "${BucketName1}"
+  Bucket2:
+    Value: !GetAtt
+      - LoggingBucket
+      - Arn
+    Export:
+      Name: !Sub "${LoggingBucketName}"

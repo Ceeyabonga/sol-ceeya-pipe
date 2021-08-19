@@ -13,7 +13,7 @@ phases:
       # - cfn-lint -i W2001 -t 3x4Buckets_stack_Ohio.yml
       # - cfn-lint -i W2001 -t Genetics_Stack.yml
       # - cfn-lint -i W2001 -t Web_App_Stack.yml
-      - cfn-lint -i W2001 E3002 -t cloudformation-stacks/basic-stacks/buckets/al-xhosa-inventory-bucket.yaml
+      - cfn-lint -i W2001 E3002 -t cloudformation-stacks/basic-stacks/buckets/al-xhosa-inventory-bucket.yml
       # - pylint --version
       # - pylint-fail-under --fail_under 9.4 scripts/*.py
       #  - cfn-lint -i W2001 -t Monitoring.json
