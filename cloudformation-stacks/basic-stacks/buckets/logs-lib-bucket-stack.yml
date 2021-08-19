@@ -56,7 +56,6 @@ Parameters:
       - CT-CORE
       - CT-SHARED
       - CT-STAGING
-    ConstraintDescription: must be a valid environment.
     Default: CT-DEV
   Name:
     Type: String
