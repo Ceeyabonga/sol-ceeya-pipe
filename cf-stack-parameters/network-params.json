@@ -6,6 +6,7 @@
     "PubSubB": "10.0.15.0/24",
     "PubSubA": "10.0.14.0/24",
     "TECSYSTEM": "NETWORK",
+    "TECENVIRONMENT": "CT-DEV",
     "Name": "S3BUCKET_STACK",
     "BUSOU": "DEV-OU",
     "taggingconfiglocation": "al-xhosa-ire-scriptlib",
