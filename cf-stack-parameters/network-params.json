@@ -9,7 +9,7 @@
     "TECENVIRONMENT": "CT-DEV",
     "Name": "S3BUCKET_STACK",
     "BUSOU": "DEV-OU",
-    "taggingconfiglocation": "al-xhosa-ire-scriptlib",
+    "taggingconfiglocation": "s3://al-xhosa-ire-scriptlib/Tags.json",
     "BUSOWNER": "siya.mendziwa@liberty.co.za",
     "BUSPROJECT": "PIPELINES_DEV_CEEYA",
     "BUSPRODUCT": "CT_S3_BUCKETS",
