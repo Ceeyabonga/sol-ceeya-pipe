@@ -1,10 +1,10 @@
 {
   "Parameters": {
-    "VPCCIDR": "10.0.14.0/22",
-    "PvtSubB": "10.0.17.0/24",
-    "PvtSubA": "10.0.16.0/24",
-    "PubSubB": "10.0.15.0/24",
-    "PubSubA": "10.0.14.0/24",
+    "VPCCIDR": "10.0.12.0/22",
+    "PvtSubB": "10.0.15.0/24",
+    "PvtSubA": "10.0.14.0/24",
+    "PubSubB": "10.0.13.0/24",
+    "PubSubA": "10.0.12.0/24",
     "TECSYSTEM": "NETWORK",
     "TECENVIRONMENT": "CT-DEV",
     "Name": "S3BUCKET_STACK",
