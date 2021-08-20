@@ -1,0 +1,35 @@
+{
+  "Tags": [{
+      "Key": "BUSOU",
+      "Value": "LIBERTY"
+    },
+    {
+      "Key": "Name",
+      "Value": "NETWORK-VPC"
+    },
+    {
+      "Key": "BUSDESC",
+      "Value": "AWSCCT"
+    },
+    {
+      "Key": "BUSDEPT",
+      "Value": "CLOUD"
+    },
+    {
+      "Key": "BUSOWNER",
+      "Value": "siya.mendziwa@liberty.co.za"
+    },
+    {
+      "Key": "OPEX",
+      "Value": "AWSCCT"
+    },
+    {
+      "Key": "RUNTIME",
+      "Value": "PERMANET"
+    },
+    {
+      "Key": "ENVIRONMENT",
+      "Value": "SANDBOX"
+    }
+  ]
+}

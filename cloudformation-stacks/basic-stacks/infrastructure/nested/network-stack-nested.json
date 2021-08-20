@@ -1,0 +1,1075 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Network stack deployable in IRELAND or FRANKFURT. ",
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [{
+          "Label": {
+            "default": "Network configuration:"
+          },
+          "Parameters": [
+            "VPCCIDR",
+            "PubSubA",
+            "PubSubB",
+            "PvtSubA",
+            "PvtSubB",
+            "PvtSubC",
+            "DomainName"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Tagging:"
+          },
+          "Parameters": [
+            "Name",
+            "TECSYSTEM",
+            "TECENVIRONMENT",
+            "BUSOU",
+            "TECAPPLICATIONROLE",
+            "BUSOWNER",
+            "BUSPROJECT",
+            "BUSPRODUCT",
+            "AUTOLIFETIME"
+          ]
+        }
+      ],
+      "ParameterLabels": {
+        "VPCCIDR": {
+          "default": "What is the CIDR range? (x.x.x.x/22)"
+        },
+        "PubSubA": {
+          "default": "What is network range for Public subnet A in AZ-A? (x.x.x.x/25)"
+        },
+        "PubSubB": {
+          "default": "What is network range for Public subnet B in AZ-B? (x.x.x.x/25)"
+        },
+        "PvtSubA": {
+          "default": "What is network range for Private subnet A in AZ-A? (x.x.x.x/24)"
+        },
+        "PvtSubB": {
+          "default": "What is network range for Private subnet B in AZ-B? (x.x.x.x/24)"
+        },
+        "PvtSubC": {
+          "default": "What is network range for Private subnet C in AZ-C? (x.x.x.x/24)"
+        },
+        "DomainName": {
+          "default": "What is the domain name for this network?"
+        },
+        "TECSYSTEM": {
+          "default": "Enter system tag."
+        },
+        "TECENVIRONMENT": {
+          "default": "Select operating environment."
+        },
+        "BUSOU": {
+          "default": "OU that this service belongs to."
+        },
+        "Name": {
+          "default": "System Name."
+        },
+        "TECAPPLICATIONROLE": {
+          "default": "Function of the resource."
+        },
+        "BUSOWNER": {
+          "default": "email address in lower case."
+        },
+        "BUSPROJECT": {
+          "default": "Project that the resource belongs to."
+        },
+        "BUSPRODUCT": {
+          "default": "Product related to this resource."
+        },
+        "AUTOLIFETIME": {
+          "default": "Is the resource temporary or Permanent."
+        }
+      }
+    }
+  },
+  "Parameters": {
+    "TECSYSTEM": {
+      "Type": "String",
+      "Default": "NETWORK"
+    },
+    "TECENVIRONMENT": {
+      "Type": "String",
+      "AllowedValues": [
+        "INT-STLBONL-DEV",
+        "CT-DEV",
+        "INT-STLBONL-INTEGRATION",
+        "INT-STLBONL-PROD",
+        "INT-STLBONL-SANDBOX",
+        "CT-PROD"
+      ],
+      "ConstraintDescription": "must be a valid environment.",
+      "Default": "CT-DEV"
+    },
+    "Name": {
+      "Type": "String",
+      "Default": "NETWORK_STACK"
+    },
+    "BUSOU": {
+      "Type": "String",
+      "Default": "DEV-OU"
+    },
+    "TECAPPLICATIONROLE": {
+      "Type": "String",
+      "Default": "NETWORK_INFRASTRUCTURE"
+    },
+    "BUSOWNER": {
+      "Type": "String",
+      "Default": "aws.interim.CT.GroupEDP.dev@liberty.co.za"
+    },
+    "BUSPROJECT": {
+      "Type": "String",
+      "Default": "CCT_INFRA"
+    },
+    "BUSPRODUCT": {
+      "Type": "String",
+      "Default": "AWSCCT_SERVICES"
+    },
+    "AUTOLIFETIME": {
+      "Type": "String",
+      "Default": "PERMANENT"
+    },
+    "VPCCIDR": {
+      "Type": "String",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    },
+    "PubSubA": {
+      "Type": "String",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    },
+    "PubSubB": {
+      "Type": "String",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    },
+    "PvtSubA": {
+      "Type": "String",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    },
+    "PvtSubB": {
+      "Type": "String",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    },
+    "PvtSubC": {
+      "Type": "String",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    },
+    "taggingconfiglocation": {
+      "Type": "String",
+      "Default": "s3://ct-ire-bootcamp-ceeya-scriptlib/Tags.json"
+    },
+    "DomainName": {
+      "Type": "String",
+      "Default": "eu-west-1.compute.internal"
+    }
+  },
+  "Resources": {
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": {
+          "Ref": "VPCCIDR"
+        },
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "Fn::Transform": {
+          "Name": "AWS::Include",
+          "Parameters": {
+            "Location": {
+              "Ref": "taggingconfiglocation"
+            }
+          }
+        }
+      }
+    },
+    "DHCPOptions": {
+      "Type": "AWS::EC2::DHCPOptions",
+      "Properties": {
+        "DomainName": {
+          "Ref": "DomainName"
+        },
+        "DomainNameServers": [
+          "AmazonProvidedDNS"
+        ]
+      }
+    },
+    "VDOP": {
+      "Type": "AWS::EC2::VPCDHCPOptionsAssociation",
+      "Properties": {
+        "DhcpOptionsId": {
+          "Ref": "DHCPOptions"
+        },
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "PublicSubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Ref": "PubSubA"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": ["0", {
+            "Fn::GetAZs": ""
+          }]
+        },
+        "Tags": [{
+            "Key": "TECENVIRONMENT",
+            "Value": {
+              "Ref": "TECENVIRONMENT"
+            }
+          },
+
+          {
+            "Key": "TECAPPLICATIONROLE",
+            "Value": {
+              "Ref": "TECAPPLICATIONROLE"
+            }
+          },
+          {
+            "Key": "TECSYSTEM",
+            "Value": {
+              "Ref": "TECSYSTEM"
+            }
+          },
+          {
+            "Key": "BUSOU",
+            "Value": {
+              "Ref": "BUSOU"
+            }
+          },
+          {
+            "Key": "BUSOWNER",
+            "Value": {
+              "Ref": "BUSOWNER"
+            }
+          },
+          {
+            "Key": "BUSPROJECT",
+            "Value": {
+              "Ref": "BUSPROJECT"
+            }
+          },
+          {
+            "Key": "BUSPRODUCT",
+            "Value": {
+              "Ref": "BUSPRODUCT"
+            }
+          },
+          {
+            "Key": "AUTOLIFETIME",
+            "Value": {
+              "Ref": "AUTOLIFETIME"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "_", [{
+                    "Fn::Select": ["0", {
+                      "Fn::GetAZs": ""
+                    }]
+                  },
+                  "PUB"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "PublicSubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Ref": "PubSubB"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": ["1", {
+            "Fn::GetAZs": ""
+          }]
+        },
+        "Tags": [{
+            "Key": "TECENVIRONMENT",
+            "Value": {
+              "Ref": "TECENVIRONMENT"
+            }
+          },
+
+          {
+            "Key": "TECAPPLICATIONROLE",
+            "Value": {
+              "Ref": "TECAPPLICATIONROLE"
+            }
+          },
+          {
+            "Key": "TECSYSTEM",
+            "Value": {
+              "Ref": "TECSYSTEM"
+            }
+          },
+          {
+            "Key": "BUSOU",
+            "Value": {
+              "Ref": "BUSOU"
+            }
+          },
+          {
+            "Key": "BUSOWNER",
+            "Value": {
+              "Ref": "BUSOWNER"
+            }
+          },
+          {
+            "Key": "BUSPROJECT",
+            "Value": {
+              "Ref": "BUSPROJECT"
+            }
+          },
+          {
+            "Key": "BUSPRODUCT",
+            "Value": {
+              "Ref": "BUSPRODUCT"
+            }
+          },
+          {
+            "Key": "AUTOLIFETIME",
+            "Value": {
+              "Ref": "AUTOLIFETIME"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "_", [{
+                    "Fn::Select": ["1", {
+                      "Fn::GetAZs": ""
+                    }]
+                  },
+                  "PUB"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "PrivateSubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Ref": "PvtSubA"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": ["0", {
+            "Fn::GetAZs": ""
+          }]
+        },
+        "Tags": [{
+            "Key": "TECENVIRONMENT",
+            "Value": {
+              "Ref": "TECENVIRONMENT"
+            }
+          },
+
+          {
+            "Key": "TECAPPLICATIONROLE",
+            "Value": {
+              "Ref": "TECAPPLICATIONROLE"
+            }
+          },
+          {
+            "Key": "TECSYSTEM",
+            "Value": {
+              "Ref": "TECSYSTEM"
+            }
+          },
+          {
+            "Key": "BUSOU",
+            "Value": {
+              "Ref": "BUSOU"
+            }
+          },
+          {
+            "Key": "BUSOWNER",
+            "Value": {
+              "Ref": "BUSOWNER"
+            }
+          },
+          {
+            "Key": "BUSPROJECT",
+            "Value": {
+              "Ref": "BUSPROJECT"
+            }
+          },
+          {
+            "Key": "BUSPRODUCT",
+            "Value": {
+              "Ref": "BUSPRODUCT"
+            }
+          },
+          {
+            "Key": "AUTOLIFETIME",
+            "Value": {
+              "Ref": "AUTOLIFETIME"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "", [{
+                    "Fn::Select": ["0", {
+                      "Fn::GetAZs": ""
+                    }]
+                  },
+                  "PRVT"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "PrivateSubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Ref": "PvtSubB"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": ["1", {
+            "Fn::GetAZs": ""
+          }]
+        },
+        "Tags": [{
+            "Key": "TECENVIRONMENT",
+            "Value": {
+              "Ref": "TECENVIRONMENT"
+            }
+          },
+
+          {
+            "Key": "TECAPPLICATIONROLE",
+            "Value": {
+              "Ref": "TECAPPLICATIONROLE"
+            }
+          },
+          {
+            "Key": "TECSYSTEM",
+            "Value": {
+              "Ref": "TECSYSTEM"
+            }
+          },
+          {
+            "Key": "BUSOU",
+            "Value": {
+              "Ref": "BUSOU"
+            }
+          },
+          {
+            "Key": "BUSOWNER",
+            "Value": {
+              "Ref": "BUSOWNER"
+            }
+          },
+          {
+            "Key": "BUSPROJECT",
+            "Value": {
+              "Ref": "BUSPROJECT"
+            }
+          },
+          {
+            "Key": "BUSPRODUCT",
+            "Value": {
+              "Ref": "BUSPRODUCT"
+            }
+          },
+          {
+            "Key": "AUTOLIFETIME",
+            "Value": {
+              "Ref": "AUTOLIFETIME"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "", [{
+                    "Fn::Select": ["1", {
+                      "Fn::GetAZs": ""
+                    }]
+                  },
+                  "PRVT"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "PrivateSubnetC": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Ref": "PvtSubC"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": ["2", {
+            "Fn::GetAZs": ""
+          }]
+        },
+        "Tags": [{
+            "Key": "TECENVIRONMENT",
+            "Value": {
+              "Ref": "TECENVIRONMENT"
+            }
+          },
+
+          {
+            "Key": "TECAPPLICATIONROLE",
+            "Value": {
+              "Ref": "TECAPPLICATIONROLE"
+            }
+          },
+          {
+            "Key": "TECSYSTEM",
+            "Value": {
+              "Ref": "TECSYSTEM"
+            }
+          },
+          {
+            "Key": "BUSOU",
+            "Value": {
+              "Ref": "BUSOU"
+            }
+          },
+          {
+            "Key": "BUSOWNER",
+            "Value": {
+              "Ref": "BUSOWNER"
+            }
+          },
+          {
+            "Key": "BUSPROJECT",
+            "Value": {
+              "Ref": "BUSPROJECT"
+            }
+          },
+          {
+            "Key": "BUSPRODUCT",
+            "Value": {
+              "Ref": "BUSPRODUCT"
+            }
+          },
+          {
+            "Key": "AUTOLIFETIME",
+            "Value": {
+              "Ref": "AUTOLIFETIME"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "", [{
+                    "Fn::Select": ["2", {
+                      "Fn::GetAZs": ""
+                    }]
+                  },
+                  "PRVT"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "IGW": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [{
+            "Key": "TECENVIRONMENT",
+            "Value": {
+              "Ref": "TECENVIRONMENT"
+            }
+          },
+
+          {
+            "Key": "TECAPPLICATIONROLE",
+            "Value": {
+              "Ref": "TECAPPLICATIONROLE"
+            }
+          },
+          {
+            "Key": "TECSYSTEM",
+            "Value": {
+              "Ref": "TECSYSTEM"
+            }
+          },
+          {
+            "Key": "BUSOU",
+            "Value": {
+              "Ref": "BUSOU"
+            }
+          },
+          {
+            "Key": "BUSOWNER",
+            "Value": {
+              "Ref": "BUSOWNER"
+            }
+          },
+          {
+            "Key": "BUSPROJECT",
+            "Value": {
+              "Ref": "BUSPROJECT"
+            }
+          },
+          {
+            "Key": "BUSPRODUCT",
+            "Value": {
+              "Ref": "BUSPRODUCT"
+            }
+          },
+          {
+            "Key": "AUTOLIFETIME",
+            "Value": {
+              "Ref": "AUTOLIFETIME"
+            }
+          }, {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "", [{
+                    "Ref": "AWS::Region"
+                  },
+                  "IGW"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "NAT1EIP": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "NAT2EIP": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "NAT1": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "NAT1EIP",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Ref": "PublicSubnetA"
+        }
+      }
+    },
+    "NAT2": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "NAT2EIP",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Ref": "PublicSubnetB"
+        }
+      }
+    },
+    "GatewayToInternet": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "InternetGatewayId": {
+          "Ref": "IGW"
+        }
+      }
+    },
+    "PublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [{
+            "Key": "TECENVIRONMENT",
+            "Value": {
+              "Ref": "TECENVIRONMENT"
+            }
+          },
+
+          {
+            "Key": "TECAPPLICATIONROLE",
+            "Value": {
+              "Ref": "TECAPPLICATIONROLE"
+            }
+          },
+          {
+            "Key": "TECSYSTEM",
+            "Value": {
+              "Ref": "TECSYSTEM"
+            }
+          },
+          {
+            "Key": "BUSOU",
+            "Value": {
+              "Ref": "BUSOU"
+            }
+          },
+          {
+            "Key": "BUSOWNER",
+            "Value": {
+              "Ref": "BUSOWNER"
+            }
+          },
+          {
+            "Key": "BUSPROJECT",
+            "Value": {
+              "Ref": "BUSPROJECT"
+            }
+          },
+          {
+            "Key": "BUSPRODUCT",
+            "Value": {
+              "Ref": "BUSPRODUCT"
+            }
+          },
+          {
+            "Key": "AUTOLIFETIME",
+            "Value": {
+              "Ref": "AUTOLIFETIME"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "", [{
+                    "Ref": "AWS::Region"
+                  },
+                  "PUB_RT"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "PublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "GatewayToInternet",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "IGW"
+        }
+      }
+    },
+    "PublicSubRTAssociationA": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnetA"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        }
+      }
+    },
+    "PublicSubRTAssociationB": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnetB"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        }
+      }
+    },
+    "PrivateRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [{
+            "Key": "TECENVIRONMENT",
+            "Value": {
+              "Ref": "TECENVIRONMENT"
+            }
+          },
+
+          {
+            "Key": "TECAPPLICATIONROLE",
+            "Value": {
+              "Ref": "TECAPPLICATIONROLE"
+            }
+          },
+          {
+            "Key": "TECSYSTEM",
+            "Value": {
+              "Ref": "TECSYSTEM"
+            }
+          },
+          {
+            "Key": "BUSOU",
+            "Value": {
+              "Ref": "BUSOU"
+            }
+          },
+          {
+            "Key": "BUSOWNER",
+            "Value": {
+              "Ref": "BUSOWNER"
+            }
+          },
+          {
+            "Key": "BUSPROJECT",
+            "Value": {
+              "Ref": "BUSPROJECT"
+            }
+          },
+          {
+            "Key": "BUSPRODUCT",
+            "Value": {
+              "Ref": "BUSPRODUCT"
+            }
+          },
+          {
+            "Key": "AUTOLIFETIME",
+            "Value": {
+              "Ref": "AUTOLIFETIME"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "", [{
+                    "Ref": "AWS::Region"
+                  },
+                  "PRVT_RT"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "PrivateRouteDefGW": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "NAT1",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "NAT1"
+        }
+      }
+    },
+    "PrivateSubRTAssocA1": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PrivateSubnetA"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        }
+      }
+    },
+    "PrivateSubRTAssocA2": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PrivateSubnetB"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        }
+      }
+    },
+    "PrivateSubRTAssocA3": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PrivateSubnetC"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        }
+      }
+    },
+    "VPCFlowlog": {
+      "Type": "AWS::EC2::FlowLog",
+      "Properties": {
+        "LogDestination": {
+          "Fn::ImportValue": "vpcflowlogsbucket"
+        },
+        "LogDestinationType": "s3",
+        "ResourceId": {
+          "Ref": "VPC"
+        },
+        "ResourceType": "VPC",
+        "TrafficType": "ALL"
+      }
+    },
+    "S3Endpoint": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": ["s3:*"],
+            "Resource": ["*"]
+          }]
+        },
+        "RouteTableIds": [{
+            "Ref": "PublicRouteTable"
+          },
+          {
+            "Ref": "PrivateRouteTable"
+          }
+        ],
+        "ServiceName": {
+          "Fn::Join": ["", ["com.amazonaws.", {
+            "Ref": "AWS::Region"
+          }, ".s3"]]
+        },
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "DynamoDBEndpoint": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": ["dynamodb:*"],
+            "Resource": ["*"]
+          }]
+        },
+        "RouteTableIds": [{
+            "Ref": "PublicRouteTable"
+          },
+          {
+            "Ref": "PrivateRouteTable"
+          }
+        ],
+        "ServiceName": {
+          "Fn::Join": ["", ["com.amazonaws.", {
+            "Ref": "AWS::Region"
+          }, ".dynamodb"]]
+        },
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "PublicSubnetA": {
+      "Value": {
+        "Ref": "PublicSubnetA"
+      },
+      "Export": {
+        "Name": "PublicSubnetA"
+      }
+    },
+    "PublicSubnetB": {
+      "Value": {
+        "Ref": "PublicSubnetB"
+      },
+      "Export": {
+        "Name": "PublicSubnetB"
+      }
+    },
+    "PrivateSubnetA": {
+      "Value": {
+        "Ref": "PrivateSubnetA"
+      },
+      "Export": {
+        "Name": "PrivateSubnetA"
+      }
+    },
+    "PrivateSubnetB": {
+      "Value": {
+        "Ref": "PrivateSubnetB"
+      },
+      "Export": {
+        "Name": "PrivateSubnetB"
+      }
+    },
+    "PrivateSubnetC": {
+      "Value": {
+        "Ref": "PrivateSubnetC"
+      },
+      "Export": {
+        "Name": "PrivateSubnetC"
+      }
+    },
+    "VpcId": {
+      "Value": {
+        "Ref": "VPC"
+      },
+      "Export": {
+        "Name": "VPC"
+
+      }
+    }
+  }
+}

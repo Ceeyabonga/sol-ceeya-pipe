@@ -1,0 +1,84 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Create an S3 VPC Flow-logs Bucket",
+  "Parameters": {
+    "objectenv": {
+      "Type": "String",
+      "Description": "All core-shared-dev Object - Environment."
+    },
+    "objectreg": {
+      "Type": "String",
+      "Description": "All core-shared-dev Object - Region."
+    },
+    "objectcmp": {
+      "Type": "String",
+      "Description": "All core-shared-dev Object - Company."
+    },
+    "taggingconfiglocation": {
+      "Type": "String",
+      "Default": "s3://ct-ire-bootcamp-ceeya-scriptlib/Tags.json"
+    }
+  },
+  "Resources": {
+    "S3Bucket1": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Fn::Join": [
+            "-",
+            [{
+                "Ref": "objectenv"
+              },
+              {
+                "Ref": "objectreg"
+              },
+              {
+                "Ref": "objectcmp"
+              }, "flowlogs"
+            ]
+          ]
+        },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [{
+            "ServerSideEncryptionByDefault": {
+              "SSEAlgorithm": "AES256"
+            }
+          }]
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "AccessControl": "LogDeliveryWrite",
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "Fn::Transform": {
+          "Name": "AWS::Include",
+          "Parameters": {
+            "Location": {
+              "Ref": "taggingconfiglocation"
+            }
+          }
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "Flowlogsbucket": {
+      "Value": {
+        "Fn::GetAtt": [
+          "S3Bucket1",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": "vpcflowlogsbucket"
+      }
+
+
+    }
+  }
+}
