@@ -350,20 +350,20 @@ Outputs:
   PublicSubnetA:
     Value: !Ref PublicSubnet1
     Export:
-      Name: PublicSubnetA
+      Name: PublicSubnetA_PipeLine
   PublicSubnetB:
     Value: !Ref PublicSubnet2
     Export:
-      Name: PublicSubnetB
+      Name: PublicSubnetB_PipeLine
   PrivateSubnetA:
     Value: !Ref PrivateSubnet1
     Export:
-      Name: PrivateSubnetA
+      Name: PrivateSubnetA_PipeLine
   PrivateSubnetB:
     Value: !Ref PrivateSubnet2
     Export:
-      Name: PrivateSubnetB
+      Name: PrivateSubnetB_PipeLine
   VpcId:
     Value: !Ref PubPrivateVPC
     Export:
-      Name: VPC
+      Name: VPC_PipeLine
