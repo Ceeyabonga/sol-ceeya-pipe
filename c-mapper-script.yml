@@ -1,0 +1,466 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploys a webapp that is configured to be behind an ALB.
+Parameters:
+  UseSSL:
+    Type: String
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  LoadBalancerPortNoSSL:
+    Type: Number
+    Default: 80
+  VPC:
+    Description: Name of an existing VPC
+    Type: 'AWS::EC2::VPC::Id'
+    ConstraintDescription: Must be an existing VPC.
+  SubnetId1:
+    Description: Existing Public Subnet for ALB
+    Type: 'AWS::EC2::Subnet::Id'
+    ConstraintDescription: Must be an existing Subnet.
+  SubnetId2:
+    Description: Existing Public Subnet for ALB
+    Type: 'AWS::EC2::Subnet::Id'
+    ConstraintDescription: Must be an existing Subnet.
+  ServiceName:
+    Description: Name of the service
+    Type: String
+    Default: OpsInfra
+  CidrIp:
+    Type: String
+    Default: 0.0.0.0/0
+  HealthCheckPath:
+    Description: Path for Health checks
+    Type: String
+    Default: /
+  HealthCheckPort:
+    Description: Path for Health checks
+    Type: String
+    Default: '443'
+  MaxSizeASG:
+    Description: Enter the Max Number of EC2 instances for the ASG
+    Type: String
+    Default: '2'
+  MinSizeASG:
+    Description: Enter the Min Size of EC2 instances for the ASG
+    Type: String
+    Default: '1'
+  DesiredCapacityASG:
+    Description: Enter the desired capacity of EC2 instances for the ASG
+    Type: String
+    Default: '1'
+  VPCZoneIdentifier:
+    Description: Private Subnet Ids of the instances
+    Type: 'List<AWS::EC2::Subnet::Id>'
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+Mappings:
+  RegionMap:
+    eu-west-1:
+      HVM64: ami-013fb80a2d9464056
+    eu-west-2:
+      HVM64: ami-0bdb828fd58c52235
+Conditions:
+  DeploySSLStack: !Equals 
+    - !Ref UseSSL
+    - true
+  DeployNormalStack: !Equals 
+    - !Ref UseSSL
+    - false
+Resources:
+  TargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: !Ref HealthCheckPath
+      HealthCheckPort: !Ref HealthCheckPort
+      HealthCheckTimeoutSeconds: 5
+      UnhealthyThresholdCount: 2
+      HealthyThresholdCount: 2
+      Name: !Join 
+        - ''
+        - - !Ref ServiceName
+          - TargetGroup
+      Port: 80
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 60
+      TargetType: instance
+      VpcId: !Ref VPC
+  ApplicationLoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: 60
+      IpAddressType: ipv4
+      Name: ceeya-cmapper-pub-alb
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref LoadBalancerSecurityGroup
+      Subnets:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+      Type: application
+  ListenerHTTPNoSSL:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Condition: DeployNormalStack
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: !Ref LoadBalancerPortNoSSL
+      Protocol: HTTP
+  LoadBalancerSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: cloudmapper-alb-sg
+      GroupDescription: Allow traffic to application load balancer
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref LoadBalancerPortNoSSL
+          ToPort: !Ref LoadBalancerPortNoSSL
+          CidrIp: !Ref CidrIp
+      VpcId: !Ref VPC
+  EC2SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: cloudmapper-EC2-sg
+      GroupDescription: Allow traffic to EC2
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref LoadBalancerPortNoSSL
+          ToPort: !Ref LoadBalancerPortNoSSL
+          CidrIp: !Ref CidrIp
+      VpcId: !Ref VPC
+  AutoScalingGroup:
+    DependsOn: LaunchConfig
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      AutoScalingGroupName: Ceeya-cmapper asg
+      Cooldown: 120
+      DesiredCapacity: !Ref DesiredCapacityASG
+      LaunchConfigurationName: CeeyaCmapLaunchC
+      MaxSize: !Ref MaxSizeASG
+      MinSize: !Ref MinSizeASG
+      Tags:
+        - Key: Name
+          Value: Ceeya-Cloudmapper
+          PropagateAtLaunch: 'true'
+      VPCZoneIdentifier: !Ref VPCZoneIdentifier
+      TargetGroupARNs:
+        - !Ref TargetGroup
+  EC2Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'
+        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+        - 'arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser'
+      Path: /
+  RolePolicies:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: ec2-policy
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'logs:Create*'
+              - 'logs:PutLogEvents'
+            Resource:
+              - 'arn:aws:logs:*:*:*'
+      Roles:
+        - !Ref EC2Role
+  EC2InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - !Ref EC2Role
+  LaunchConfig:
+    DependsOn: LoadBalancerSecurityGroup
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Metadata:
+      Comment1: Configure the bootstrap helpers to install the Apache Web Server and PHP
+      Comment2: Save website content to /var/www/html/index.php
+      'AWS::CloudFormation::Init':
+        configSets:
+          InstallAndRun:
+            - Install
+        Install:
+          packages:
+            yum:
+              httpd: []
+              php: []
+          files:
+            /tmp/cwlogs/config.json:
+              content:
+                agent:
+                  run_as_user: root
+                logs:
+                  logs_collected:
+                    files:
+                      collect_list:
+                        - file_path: /var/log/httpd/access_log
+                          log_group_name: webapp_httpd
+                          log_stream_name: '{instance_id}'
+                          datetime_format: '%d/%b/%Y:%H:%M:%S'
+              mode: '000400'
+              owner: root
+              group: root
+            /var/www/html/index.php:
+              content: !Join 
+                - ''
+                - - |
+                    <html>
+                  - |2
+                      <head>
+                  - |2
+                        <title>AWS CloudFormation PHP Sample</title>
+                  - |2
+                        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+                  - |2
+                      </head>
+                  - |2
+                      <body>
+                  - |2
+                        <h1>Welcome to the AWS CloudFormation PHP Sample</h1>
+                  - |2
+                        <p/>
+                  - |2
+                        <?php
+                  - |2
+                          // Print out the current data and time
+                  - |2
+                          print "The Current Date and Time is: <br/>";
+                  - |2
+                          print date("g:i A l, F j Y.");
+                  - |2
+                        ?>
+                  - |2
+                        <p/>
+                  - |2
+                        <?php
+                  - |2
+                          // Setup a handle for CURL
+                  - |2
+                          $curl_handle=curl_init();
+                  - |2
+                          curl_setopt($curl_handle,CURLOPT_CONNECTTIMEOUT,2);
+                  - |2
+                          curl_setopt($curl_handle,CURLOPT_RETURNTRANSFER,1);
+                  - |2
+                          // Get the hostname of the instance from the instance metadata
+                  - |2
+                          curl_setopt($curl_handle,CURLOPT_URL,'http://169.254.169.254/latest/meta-data/public-hostname');
+                  - |2
+                          $hostname = curl_exec($curl_handle);
+                  - |2
+                          if (empty($hostname))
+                  - |2
+                          {
+                  - |2
+                            print "Sorry, for some reason, we got no hostname back <br />";
+                  - |2
+                          }
+                  - |2
+                          else
+                  - |2
+                          {
+                  - |2
+                            print "Server = " . $hostname . "<br />";
+                  - |2
+                          }
+                  - |2
+                          // Get the instance-id of the instance from the instance metadata
+                  - |2
+                          curl_setopt($curl_handle,CURLOPT_URL,'http://169.254.169.254/latest/meta-data/instance-id');
+                  - |2
+                          $instanceid = curl_exec($curl_handle);
+                  - |2
+                          if (empty($instanceid))
+                  - |2
+                          {
+                  - |2
+                            print "Sorry, for some reason, we got no instance id back <br />";
+                  - |2
+                          }
+                  - |2
+                          else
+                  - |2
+                          {
+                  - |2
+                            print "EC2 instance-id = " . $instanceid . "<br />";
+                  - |2
+                          }
+                  - |2
+                        ?>
+                  - |2
+                        <h2>PHP Information</h2>
+                  - |2
+                        <p/>
+                  - |2
+                        <?php
+                  - |2
+                          phpinfo();
+                  - |2
+                        ?>
+                  - |2
+                      </body>
+                  - |
+                    </html>
+              mode: '000600'
+              owner: apache
+              group: apache
+            /etc/cfn/cfn-hup.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [main]
+                  - stack=
+                  - !Ref 'AWS::StackId'
+                  - |+
+
+                  - region=
+                  - !Ref 'AWS::Region'
+                  - |+
+
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [cfn-auto-reloader-hook]
+                  - |
+                    triggers=post.update
+                  - >
+                    path=Resources.LaunchConfig.Metadata.AWS::CloudFormation::Init
+                  - 'action=/opt/aws/bin/cfn-init -v '
+                  - '         --stack '
+                  - !Ref 'AWS::StackName'
+                  - '         --resource LaunchConfig '
+                  - '         --configsets InstallAndRun '
+                  - '         --region '
+                  - !Ref 'AWS::Region'
+                  - |+
+
+                  - |
+                    runas=root
+          services:
+            sysvinit:
+              httpd:
+                enabled: 'true'
+                ensureRunning: 'true'
+              cfn-hup:
+                enabled: 'true'
+                ensureRunning: 'true'
+                sendmail:
+                  enabled: 'false'
+                  ensureRunning: 'false'
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+    Properties:
+      ImageId: !FindInMap 
+        - RegionMap
+        - !Ref 'AWS::Region'
+        - HVM64
+      SecurityGroups:
+        - !Ref EC2SecurityGroup
+      InstanceType: !Ref InstanceType
+      LaunchConfigurationName: CeeyaCmapLaunchC
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      UserData: !Base64 
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -xe
+            - |
+              # Switch to root
+            - |
+              sudo -i
+            - |
+              # Get the latest CloudFormation package
+            - |
+              yum install -y aws-cfn-bootstrap
+            - |
+              # Start the Docker deamon
+            - |
+              service docker restart
+            - |
+              docker stop ctdev
+            - |
+              # Start a docker container from an image and start apache2
+            - >
+              docker run -it -p 80:8000 -d --restart always --name ctdev_v1
+              e9e7ef4977df /bin/bash && docker exec ctdev_v1 service apache2
+              start
+            - |
+              # Install the files and packages from the metadata
+            - '/opt/aws/bin/cfn-init -v '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource LaunchConfig '
+            - '         --configsets InstallAndRun '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - |
+              # Get the CloudWatch Logs agent
+            - >
+              wget
+              https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+            - |
+              # Install the CloudWatch Logs agent
+            - |2
+                rpm -U ./amazon-cloudwatch-agent.rpm
+            - |2
+               /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/tmp/cwlogs/config.json -s 
+            - |
+              # Signal the status from cfn-init
+            - '/opt/aws/bin/cfn-signal -e $? '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource LaunchConfig '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+Outputs:
+  ALBDNS:
+    Value: !GetAtt 
+      - ApplicationLoadBalancer
+      - DNSName
+    Export:
+      Name: cloudmapper-alb
+  TG:
+    Value: !GetAtt 
+      - TargetGroup
+      - TargetGroupName
+    Export:
+      Name: cloudmapper-tg
+  AutoscalingGroup:
+    Description: The newly created asg
+    Value: !Ref AutoScalingGroup
+  LaunchConfig:
+    Description: the newly created launch config
+    Value: !Ref LaunchConfig
